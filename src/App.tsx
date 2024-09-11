@@ -15,7 +15,9 @@ const socket = io("https://bellachao.zapto.org", {
 function App() {
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
-  const localStream = useRef<MediaStream | null>(null);
+  const localStream = useRef<MediaStream | null>(new MediaStream());
+  const cameraStream = useRef<MediaStream | null>(null);
+  const audioStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const id = useRef<string | null>(
     new URLSearchParams(window.location.search).get("id")
@@ -23,10 +25,10 @@ function App() {
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
-  const getUserMedia = () => {
+  const getUserMedia: (constraints?: MediaStreamConstraints) => Promise<MediaStream> = (constraints?: MediaStreamConstraints) => {
     return new Promise((resolve, reject) => {
       navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
+        .getUserMedia(constraints)
         .then((stream) => {
           resolve(stream);
         })
@@ -62,31 +64,34 @@ function App() {
   };
 
   const start = () => {
-    if (localStream.current) {
-      localVideo.current!.srcObject = localStream.current;
-      setTimeout(() => {
-        startCall();
-      }, 1000);
-    } else {
-      getUserMedia().then((stream: any) => {
-        localStream.current = stream;
-        localVideo.current!.srcObject = stream;
-        setTimeout(() => {
-          startCall();
-        }, 1000);
+    if (cameraStream.current) {
+      cameraStream.current.getVideoTracks().forEach((track) => {
+        localStream.current!.addTrack(track);
       });
+      localVideo.current!.srcObject = localStream.current;
     }
+    if (audioStream.current) {
+      audioStream.current.getAudioTracks().forEach((track) => {
+        localStream.current!.addTrack(track);
+      });
+      localVideo.current!.srcObject = localStream.current;
+    }
+    setTimeout(() => {
+      startCall();
+    }, 1000);
   };
 
   useEffect(() => {
     setInterval(() => {
       socket.connect();
     }, 1000);
-    getUserMedia().then((stream: any) => {
-      localStream.current = stream;
+    getUserMedia({audio: true}).then((stream: any) => {
+      audioStream.current = stream;
+    });
+    getUserMedia({video: true}).then((stream: any) => {
+      cameraStream.current = stream;
     });
     socket.on(`signal_${id.current}`, (data: any) => {
-      console.log(data);
       if (data.offer) {
         createPeerConnection();
         peerConnection.current!.setRemoteDescription(data.offer);

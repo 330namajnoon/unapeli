@@ -19,7 +19,7 @@ const Video = ({ socket }: VideoProps) => {
   useEffect(() => {
     socket.on(`videoOnChange_${id.current}`, (comand: string) => {
       setSocketCalled(true);
-      setTimeout(() => setSocketCalled(false), 1000);
+      setTimeout(() => setSocketCalled(false), 200);
       eval(comand);
     });
   }, []);
