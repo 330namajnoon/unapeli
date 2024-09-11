@@ -11,7 +11,7 @@ function App() {
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const localStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
-
+  const id = useRef<string | null>(new URLSearchParams(window.location.search).get("id"));
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
@@ -34,7 +34,7 @@ function App() {
     });
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("signal", { candidate: event.candidate });
+        socket.emit("signal", { candidate: event.candidate }, id.current);
       }
     };
     peerConnection.current.ontrack = (event) => {
@@ -49,7 +49,7 @@ function App() {
     createPeerConnection();
     peerConnection.current!.createOffer().then((offer) => {
       peerConnection.current!.setLocalDescription(offer);
-      socket.emit("signal", { offer: offer });
+      socket.emit("signal", { offer: offer }, id.current);
     });
   };
 
@@ -71,16 +71,18 @@ function App() {
   };
 
   useEffect(() => {
+    console.log(id.current);
     getUserMedia().then((stream: any) => {
       localStream.current = stream;
     });
-    socket.on("signal", (data: any) => {
+    socket.on(`signal_${id.current}`, (data: any) => {
+      console.log(data);
       if (data.offer) {
         createPeerConnection();
         peerConnection.current!.setRemoteDescription(data.offer);
         peerConnection.current!.createAnswer().then((answer) => {
           peerConnection.current!.setLocalDescription(answer);
-          socket.emit("signal", { answer: answer });
+          socket.emit("signal", { answer: answer }, id.current);
         });
       } else if (data.answer) {
         peerConnection.current!.setRemoteDescription(
@@ -104,7 +106,7 @@ function App() {
           }}
         />
       }
-      <VideoCall ref={localVideo} autoPlay playsInline muted></VideoCall>
+      <VideoCall ref={localVideo} autoPlay playsInline muted display="none"></VideoCall>
       <VideoCall ref={remoteVideo} autoPlay playsInline></VideoCall>
       <Video socket={socket}/>
     </div>

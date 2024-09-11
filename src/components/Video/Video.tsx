@@ -9,9 +9,15 @@ export interface VideoProps {
 const Video = ({ socket }: VideoProps) => {
   const video = useRef<HTMLVideoElement>(null);
   const [socketCalled, setSocketCalled] = useState(false);
+  const id = useRef<string | null>(
+    new URLSearchParams(window.location.search).get("id")
+  );
+  const path = useRef<string | null>(
+    new URLSearchParams(window.location.search).get("path")
+  );
 
   useEffect(() => {
-    socket.on("videoOnChange", (comand: string) => {
+    socket.on(`videoOnChange_${id.current}`, (comand: string) => {
       setSocketCalled(true);
       setTimeout(() => setSocketCalled(false), 1000);
       eval(comand);
@@ -24,29 +30,29 @@ const Video = ({ socket }: VideoProps) => {
         !socketCalled &&
         socket.emit(
           "videoOnChange",
-          `video.current.currentTime = ${e.target.currentTime};video.current.play();`
+          `video.current.currentTime = ${e.target.currentTime};video.current.play();`,
+          id.current
         )
       }
       onPause={(e: any) =>
         !socketCalled &&
         socket.emit(
           "videoOnChange",
-          `video.current.currentTime = ${e.target.currentTime}; video.current.pause();`
+          `video.current.currentTime = ${e.target.currentTime}; video.current.pause();`,
+          id.current
         )
       }
       onSeeked={(e: any) =>
         !socketCalled &&
         socket.emit(
           "videoOnChange",
-          `video.current.currentTime = ${e.target.currentTime}`
+          `video.current.currentTime = ${e.target.currentTime}`,
+          id.current
         )
       }
       controls
     >
-      <source
-        src="https://bellachao.zapto.org/downloads/Inside_Out_2_2024_1080p_WEBRip_x264_AAC5_1_video_converter_com.mp4"
-        type="video/mp4"
-      />
+      <source src={path.current!} type="video/mp4" />
     </Styles.Video>
   );
 };
