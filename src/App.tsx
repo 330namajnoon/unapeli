@@ -4,14 +4,22 @@ import VideoCall from "./components/VideoCall";
 import StartStep from "./components/StartStep";
 import Video from "./components/Video";
 
-const socket = io("https://bellachao.zapto.org");
+const socket = io("https://bellachao.zapto.org", {
+  reconnection: true, // Permite reconexión automática
+  reconnectionAttempts: Infinity, // Número de intentos de reconexión (por defecto 0 es infinito)
+  reconnectionDelay: 1000, // Tiempo de espera entre reconexiones (en milisegundos)
+  reconnectionDelayMax: 5000, // Máximo tiempo de espera entre reconexiones
+  timeout: 20000, // Tiempo de espera para reconexión
+});
 
 function App() {
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const localStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const id = useRef<string | null>(new URLSearchParams(window.location.search).get("id"));
+  const id = useRef<string | null>(
+    new URLSearchParams(window.location.search).get("id")
+  );
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
@@ -71,7 +79,9 @@ function App() {
   };
 
   useEffect(() => {
-    console.log(id.current);
+    setInterval(() => {
+      socket.connect();
+    }, 1000);
     getUserMedia().then((stream: any) => {
       localStream.current = stream;
     });
@@ -98,17 +108,23 @@ function App() {
 
   return (
     <div>
-      { step === "start" && 
+      {step === "start" && (
         <StartStep
           action={() => {
             start();
             setStep("call");
           }}
         />
-      }
-      <VideoCall ref={localVideo} autoPlay playsInline muted display="none"></VideoCall>
+      )}
+      <VideoCall
+        ref={localVideo}
+        autoPlay
+        playsInline
+        muted
+        display="none"
+      ></VideoCall>
       <VideoCall ref={remoteVideo} autoPlay playsInline></VideoCall>
-      <Video socket={socket}/>
+      <Video socket={socket} />
     </div>
   );
 }
