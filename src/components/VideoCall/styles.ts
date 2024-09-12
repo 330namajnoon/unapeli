@@ -41,4 +41,5 @@ export const Video = styled.video<{visible?: boolean, size: keyof {sm: "sm"; md:
     background-position: center;
     object-fit: cover;
     transition: transform 0.3s;
+    cursor: pointer;
 `;
