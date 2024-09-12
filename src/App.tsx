@@ -20,7 +20,7 @@ function App() {
   const audioStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const [localVideoVisible, setLocalVideoVisible] = useState(false);
-  const [remoteVideoVisible, setRemoteVideoVisible] = useState(false);
+  const [remoteVideoVisible, setRemoteVideoVisible] = useState(true);
 
   const id = useRef<string | null>(
     new URLSearchParams(window.location.search).get("id")
