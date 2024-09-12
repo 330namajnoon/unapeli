@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import VideoCall from "./components/VideoCall";
 import StartStep from "./components/StartStep";
@@ -19,13 +19,18 @@ function App() {
   const cameraStream = useRef<MediaStream | null>(null);
   const audioStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
+  const [localVideoVisible, setLocalVideoVisible] = useState(false);
+  const [remoteVideoVisible, setRemoteVideoVisible] = useState(false);
+
   const id = useRef<string | null>(
     new URLSearchParams(window.location.search).get("id")
   );
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
-  const getUserMedia: (constraints?: MediaStreamConstraints) => Promise<MediaStream> = (constraints?: MediaStreamConstraints) => {
+  const getUserMedia: (
+    constraints?: MediaStreamConstraints
+  ) => Promise<MediaStream> = (constraints?: MediaStreamConstraints) => {
     return new Promise((resolve, reject) => {
       navigator.mediaDevices
         .getUserMedia(constraints)
@@ -37,6 +42,16 @@ function App() {
         });
     });
   };
+
+  const setVideosVisibility = useCallback(() => {
+    if (localVideoVisible) {
+      setRemoteVideoVisible(true);
+      setLocalVideoVisible(false);
+    } else {
+      setRemoteVideoVisible(false);
+      setLocalVideoVisible(true);
+    }
+  }, [localVideoVisible, remoteVideoVisible]);
 
   const createPeerConnection = () => {
     peerConnection.current = new RTCPeerConnection({
@@ -85,10 +100,10 @@ function App() {
     setInterval(() => {
       socket.connect();
     }, 1000);
-    getUserMedia({audio: true}).then((stream: any) => {
+    getUserMedia({ audio: true }).then((stream: any) => {
       audioStream.current = stream;
     });
-    getUserMedia({video: true}).then((stream: any) => {
+    getUserMedia({ video: true }).then((stream: any) => {
       cameraStream.current = stream;
     });
     socket.on(`signal_${id.current}`, (data: any) => {
@@ -112,7 +127,7 @@ function App() {
   }, []);
 
   return (
-    <div>
+    <div style={{position: "relative"}}>
       {step === "start" && (
         <StartStep
           action={() => {
@@ -126,9 +141,16 @@ function App() {
         autoPlay
         playsInline
         muted
-        display="none"
+        visible={!!!remoteVideo.current?.srcObject || localVideoVisible}
+        onVisibilityChange={setVideosVisibility}
       ></VideoCall>
-      <VideoCall ref={remoteVideo} autoPlay playsInline></VideoCall>
+      <VideoCall
+        ref={remoteVideo}
+        autoPlay
+        playsInline
+        visible={remoteVideoVisible}
+        onVisibilityChange={setVideosVisibility}
+      ></VideoCall>
       <Video socket={socket} />
     </div>
   );

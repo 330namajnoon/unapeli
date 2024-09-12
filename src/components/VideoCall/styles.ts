@@ -18,8 +18,8 @@ const getSize = (size: keyof {sm: "sm"; md: "md", lg: "lg"}) => {
             `;
         case "lg":
             return `
-                top: 0;
-                left: 0;
+                top: 0px;
+                left: 0px;
                 border-radius: 0;
                 min-width: 100vw;
                 min-height: 100vh;
@@ -29,15 +29,15 @@ const getSize = (size: keyof {sm: "sm"; md: "md", lg: "lg"}) => {
     }
 }
 
-export const Video = styled.video<{display?: string, size: keyof {sm: "sm"; md: "md", lg: "lg"}}>`
-    position: absolute;
+export const Video = styled.video<{visible?: boolean, size: keyof {sm: "sm"; md: "md", lg: "lg"}}>`
+    position: fixed;
     transform: scale(-1, 1);
     top: 20px;
     left: 20px;
-    z-index: 1000;
+    z-index: 9999;
     border-radius: 50vw;
     ${props => getSize(props.size)}
-    display: ${props => props.display};
+    display: ${props => props.visible ? "block" : "none"};
     background-position: center;
     object-fit: cover;
     transition: transform 0.3s;
