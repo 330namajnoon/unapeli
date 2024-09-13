@@ -37,7 +37,7 @@ const Video = ({ socket }: VideoProps) => {
         !socketCalled &&
         socket.emit(
           "videoOnChange",
-          `video.current.currentTime = ${e.target.currentTime};video.current.play();`,
+          `video.current.currentTime = ${e.target.currentTime};video.current.play();socket.emit("data", { path }, id.current);`,
           id.current
         )
       }
