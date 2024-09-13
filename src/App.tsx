@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import VideoCall from "./components/VideoCall";
 import StartStep from "./components/StartStep";
 import Video from "./components/Video";
+import * as Styles from "./styles";
 
 const socket = io("https://bellachao.zapto.org", {
   reconnection: true, // Permite reconexión automática
@@ -19,8 +20,49 @@ function App() {
   const cameraStream = useRef<MediaStream | null>(null);
   const audioStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const [localVideoVisible, setLocalVideoVisible] = useState(false);
-  const [remoteVideoVisible, setRemoteVideoVisible] = useState(true);
+  const [videoSize, setVideoSize] =
+    useState<keyof { sm: "sm"; md: "md"; lg: "lg" }>("sm");
+  const toch = useRef<number>(0);
+  const timeOut = useRef<any>(null);
+  const videoSizeTimeout = useRef<any>(null);
+  const muveIsStarted = useRef<boolean>(false);
+  const [videoRotate, setVideoRotate] = useState(0);
+
+  const handleToch = () => {
+    muveIsStarted.current = true;
+    clearTimeout(timeOut.current);
+    clearTimeout(videoSizeTimeout.current);
+    timeOut.current = setTimeout(() => {
+      toch.current = 0;
+    }, 300);
+    toch.current++;
+    if (toch.current === 2) {
+      videoSizeTimeout.current = setTimeout(() => {
+        if (videoSize === "sm") {
+          setVideoSize("md");
+        } else if (videoSize === "md") {
+          setVideoSize("lg");
+        } else if (videoSize === "lg") {
+          setVideoSize("sm");
+        }
+      }, 300);
+    }
+    if (toch.current === 3) {
+      setVideoRotate((prev) => prev + 180);
+    }
+  };
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement> | any) => {
+    const video: HTMLDivElement = e.currentTarget;
+    if (muveIsStarted.current) {
+      video.style.top = `${e.clientY - video.offsetHeight / 2}px`;
+      video.style.left = `${e.clientX - video.offsetWidth / 2}px`;
+    }
+  };
+
+  const handleEndMove = () => {
+    muveIsStarted.current = false;
+  };
 
   const id = useRef<string | null>(
     new URLSearchParams(window.location.search).get("id")
@@ -42,16 +84,6 @@ function App() {
         });
     });
   };
-
-  const setVideosVisibility = useCallback(() => {
-    if (localVideoVisible) {
-      setRemoteVideoVisible(true);
-      setLocalVideoVisible(false);
-    } else {
-      setRemoteVideoVisible(false);
-      setLocalVideoVisible(true);
-    }
-  }, [localVideoVisible, remoteVideoVisible]);
 
   const createPeerConnection = () => {
     peerConnection.current = new RTCPeerConnection({
@@ -127,7 +159,7 @@ function App() {
   }, []);
 
   return (
-    <div style={{position: "relative"}}>
+    <div style={{ position: "relative" }}>
       {step === "start" && (
         <StartStep
           action={() => {
@@ -136,21 +168,23 @@ function App() {
           }}
         />
       )}
-      <VideoCall
-        ref={localVideo}
-        autoPlay
-        playsInline
-        muted
-        visible={!!!remoteVideo.current?.srcObject || localVideoVisible}
-        onVisibilityChange={setVideosVisibility}
-      ></VideoCall>
-      <VideoCall
-        ref={remoteVideo}
-        autoPlay
-        playsInline
-        visible={remoteVideoVisible}
-        onVisibilityChange={setVideosVisibility}
-      ></VideoCall>
+      <Styles.VideoCallcontainer
+        rotate={videoRotate}
+        size={videoSize}
+        onMouseMove={handleMove}
+        onTouchMove={handleMove}
+        onMouseDown={handleToch}
+        onMouseUp={handleEndMove}
+        onMouseOut={handleEndMove}
+      >
+        <VideoCall ref={localVideo} autoPlay playsInline muted></VideoCall>
+        <VideoCall
+          style={{ transform: "rotateY(180deg)"}}
+          ref={remoteVideo}
+          autoPlay
+          playsInline
+        ></VideoCall>
+      </Styles.VideoCallcontainer>
       <Video socket={socket} />
     </div>
   );
