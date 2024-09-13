@@ -16,7 +16,7 @@ const socket = io("https://bellachao.zapto.org", {
 function App() {
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
-  const localStream = useRef<MediaStream | null>(new MediaStream());
+  const localStream = useRef<MediaStream>(new MediaStream());
   const cameraStream = useRef<MediaStream | null>(null);
   const audioStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
@@ -26,7 +26,7 @@ function App() {
   const timeOut = useRef<any>(null);
   const videoSizeTimeout = useRef<any>(null);
   const muveIsStarted = useRef<boolean>(false);
-  const [videoRotate, setVideoRotate] = useState(0);
+  const [videoRotate, setVideoRotate] = useState(180);
 
   const handleToch = () => {
     muveIsStarted.current = true;
@@ -95,6 +95,7 @@ function App() {
       }
     };
     peerConnection.current.ontrack = (event) => {
+      setVideoRotate(0);
       remoteVideo.current!.srcObject = event.streams[0];
     };
     localStream.current!.getTracks().forEach((track) => {
@@ -169,7 +170,7 @@ function App() {
         />
       )}
       <Styles.VideoCallcontainer
-        rotate={!!!remoteVideo.current?.srcObject ? 180 : videoRotate}
+        rotate={videoRotate}
         size={videoSize}
         onMouseMove={handleMove}
         onTouchMove={handleMove}
@@ -180,7 +181,7 @@ function App() {
         <VideoCall ref={remoteVideo} style={{backgroundColor: "red"}} autoPlay playsInline muted></VideoCall>
         <VideoCall
           ref={localVideo}
-          style={{ transform: "rotateY(180deg)"}}
+          style={{ transform: "rotateY(180deg)", borderRadius: "10px"}}
           autoPlay
           playsInline
         ></VideoCall>

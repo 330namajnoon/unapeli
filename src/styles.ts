@@ -63,5 +63,4 @@ export const VideoCallcontainer = styled.div<{size: keyof {sm: "sm"; md: "md", l
     video {
         ${props => videosRadios(props.size)}
     }
-   
 `;
