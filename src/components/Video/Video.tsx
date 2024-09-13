@@ -12,11 +12,17 @@ const Video = ({ socket }: VideoProps) => {
   const id = useRef<string | null>(
     new URLSearchParams(window.location.search).get("id")
   );
-  const path = useRef<string | null>(
+  const [path, setPath] = useState<string | null>(
     new URLSearchParams(window.location.search).get("path")
   );
 
   useEffect(() => {
+    socket.emit("data", { path }, id.current);
+    socket.on(`data_${id.current}`, (data: any) => {
+      if (data.path && !path) {
+        setPath(data.path);
+      }
+    });
     socket.on(`videoOnChange_${id.current}`, (comand: string) => {
       setSocketCalled(true);
       setTimeout(() => setSocketCalled(false), 200);
@@ -52,7 +58,7 @@ const Video = ({ socket }: VideoProps) => {
       }
       controls
     >
-      <source src={path.current!} type="video/mp4" />
+      <source src={path!} type="video/mp4" />
     </Styles.Video>
   );
 };
