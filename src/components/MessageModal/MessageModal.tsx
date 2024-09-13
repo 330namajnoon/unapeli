@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import * as Styles from "./styles";
 import { RootState } from "../../store";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   setMessage,
   setSendedMessage,
@@ -12,6 +12,7 @@ import socket from "../../socket";
 
 const MessageModal = () => {
   const dispatch = useDispatch();
+  const timeout = useRef<any>(null);
   const id = useSelector((state: RootState) => state.app.id);
   const message: string = useSelector(
     (state: RootState) => state.comunication.message
@@ -34,11 +35,15 @@ const MessageModal = () => {
 
   useEffect(() => {
     socket.on(`data_${id}`, (data: any) => {
-      dispatch(setSendedMessage(data.message));
-      dispatch(setShowMessage(true));
-      setTimeout(() => {
-        dispatch(setShowMessage(false));
-      }, 2000);
+      if (data.message) {
+        clearTimeout(timeout.current);
+        dispatch(setSendedMessage(data.message));
+        dispatch(setShowMessage(true));
+        timeout.current = setTimeout(() => {
+          dispatch(setSendedMessage(""));
+          dispatch(setShowMessage(false));
+        }, 5000);
+      }
     });
   }, []);
 
@@ -55,7 +60,9 @@ const MessageModal = () => {
 
   return (
     <Styles.Container>
-      {showMessage && <Styles.Message>{sendedMessage}</Styles.Message>}
+      {showMessage && !!sendedMessage && (
+        <Styles.Message>{sendedMessage}</Styles.Message>
+      )}
       {showMessageSend && (
         <Styles.MessageSend
           onClick={() => {
