@@ -29,6 +29,7 @@ const Video = ({ socket }: VideoProps) => {
       eval(comand);
     });
   }, []);
+
   return (
     <Styles.Video
       ref={video}
@@ -58,7 +59,7 @@ const Video = ({ socket }: VideoProps) => {
       }
       controls
     >
-      <source src={path!} type="video/mp4" />
+      {path && <source src={path} type="video/mp4" />}
     </Styles.Video>
   );
 };

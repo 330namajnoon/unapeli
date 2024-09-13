@@ -178,7 +178,7 @@ function App() {
         onMouseUp={handleEndMove}
         onMouseOut={handleEndMove}
       >
-        <VideoCall ref={remoteVideo} style={{backgroundColor: "red"}} autoPlay playsInline muted></VideoCall>
+        <VideoCall ref={remoteVideo} autoPlay playsInline muted></VideoCall>
         <VideoCall
           ref={localVideo}
           style={{ transform: "rotateY(180deg)", borderRadius: "10px"}}
