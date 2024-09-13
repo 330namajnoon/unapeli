@@ -1,19 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import VideoCall from "./components/VideoCall";
 import StartStep from "./components/StartStep";
 import Video from "./components/Video";
 import * as Styles from "./styles";
-
-const socket = io("https://bellachao.zapto.org", {
-  reconnection: true, // Permite reconexión automática
-  reconnectionAttempts: Infinity, // Número de intentos de reconexión (por defecto 0 es infinito)
-  reconnectionDelay: 1000, // Tiempo de espera entre reconexiones (en milisegundos)
-  reconnectionDelayMax: 5000, // Máximo tiempo de espera entre reconexiones
-  timeout: 20000, // Tiempo de espera para reconexión
-});
+import Menu from "./components/Menu";
+import MessageModal from "./components/MessageModal";
+import { useSelector } from "react-redux";
+import { RootState } from "./store";
+import socket from "./socket";
 
 function App() {
+  const micIsOn = useSelector((state: RootState) => state.app.micIsOn);
   const localVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const localStream = useRef<MediaStream>(new MediaStream());
@@ -64,9 +61,7 @@ function App() {
     muveIsStarted.current = false;
   };
 
-  const id = useRef<string | null>(
-    new URLSearchParams(window.location.search).get("id")
-  );
+  const id = useSelector((state: RootState) => state.app.id);
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
@@ -91,7 +86,7 @@ function App() {
     });
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("signal", { candidate: event.candidate }, id.current);
+        socket.emit("signal", { candidate: event.candidate }, id);
       }
     };
     peerConnection.current.ontrack = (event) => {
@@ -107,7 +102,7 @@ function App() {
     createPeerConnection();
     peerConnection.current!.createOffer().then((offer) => {
       peerConnection.current!.setLocalDescription(offer);
-      socket.emit("signal", { offer: offer }, id.current);
+      socket.emit("signal", { offer: offer }, id);
     });
   };
 
@@ -139,13 +134,13 @@ function App() {
     getUserMedia({ video: true }).then((stream: any) => {
       cameraStream.current = stream;
     });
-    socket.on(`signal_${id.current}`, (data: any) => {
+    socket.on(`signal_${id}`, (data: any) => {
       if (data.offer) {
         createPeerConnection();
         peerConnection.current!.setRemoteDescription(data.offer);
         peerConnection.current!.createAnswer().then((answer) => {
           peerConnection.current!.setLocalDescription(answer);
-          socket.emit("signal", { answer: answer }, id.current);
+          socket.emit("signal", { answer: answer }, id);
         });
       } else if (data.answer) {
         peerConnection.current!.setRemoteDescription(
@@ -159,8 +154,22 @@ function App() {
     });
   }, []);
 
+  useEffect(() => {
+    if (micIsOn) {
+      localStream.current.getAudioTracks().forEach((track) => {
+        track.enabled = true;
+      });
+    } else {
+      localStream.current.getAudioTracks().forEach((track) => {
+        track.enabled = false;
+      });
+    }
+  }, [micIsOn]);
+
   return (
     <div style={{ position: "relative" }}>
+      <Menu />
+      <MessageModal />
       {step === "start" && (
         <StartStep
           action={() => {
@@ -180,7 +189,7 @@ function App() {
       >
         <VideoCall ref={remoteVideo} autoPlay playsInline></VideoCall>
         <VideoCall
-          style={{ transform: "rotateY(180deg)", borderRadius: "10px"}}
+          style={{ transform: "rotateY(180deg)", borderRadius: "10px" }}
           ref={localVideo}
           autoPlay
           playsInline
