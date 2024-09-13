@@ -30,7 +30,7 @@ const getSize = (size: keyof {sm: "sm"; md: "md", lg: "lg"}) => {
 }
 
 export const Video = styled.video<{visible?: boolean, size: keyof {sm: "sm"; md: "md", lg: "lg"}}>`
-    position: fixed;
+    position: absolute;
     transform: scale(-1, 1);
     top: 20px;
     left: 20px;
