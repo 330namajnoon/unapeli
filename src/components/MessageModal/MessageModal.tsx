@@ -58,7 +58,7 @@ const MessageModal = () => {
       {showMessage && <Styles.Message>{sendedMessage}</Styles.Message>}
       {showMessageSend && (
         <Styles.MessageSend
-          onClick={(e) => {
+          onClick={() => {
             dispatch(setShowMessageSend(false));
           }}
         >
