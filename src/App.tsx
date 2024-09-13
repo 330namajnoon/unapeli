@@ -169,7 +169,7 @@ function App() {
         />
       )}
       <Styles.VideoCallcontainer
-        rotate={videoRotate}
+        rotate={!!!remoteVideo.current?.srcObject ? 180 : videoRotate}
         size={videoSize}
         onMouseMove={handleMove}
         onTouchMove={handleMove}
@@ -177,10 +177,10 @@ function App() {
         onMouseUp={handleEndMove}
         onMouseOut={handleEndMove}
       >
-        <VideoCall ref={localVideo} autoPlay playsInline muted></VideoCall>
+        <VideoCall ref={remoteVideo} style={{backgroundColor: "red"}} autoPlay playsInline muted></VideoCall>
         <VideoCall
+          ref={localVideo}
           style={{ transform: "rotateY(180deg)"}}
-          ref={remoteVideo}
           autoPlay
           playsInline
         ></VideoCall>

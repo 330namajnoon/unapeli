@@ -34,6 +34,24 @@ const getSize = (size: keyof {sm: "sm"; md: "md", lg: "lg"}) => {
     }
 }
 
+const videosRadios = (size: keyof {sm: "sm"; md: "md", lg: "lg"}) => {
+
+    switch (size) {
+        case "sm":
+            return `
+                border-radius: 50%;
+            `;
+        case "md":
+            return `
+                border-radius: 50%;
+            `;
+        case "lg":
+            return `
+                border-radius: 0;
+            `;
+    }
+}
+
 export const VideoCallcontainer = styled.div<{size: keyof {sm: "sm"; md: "md", lg: "lg"}, rotate: number}>`
     ${props => getSize(props.size)}
     transform: rotateY(${props => props.rotate}deg);
@@ -41,5 +59,9 @@ export const VideoCallcontainer = styled.div<{size: keyof {sm: "sm"; md: "md", l
     z-index: 9999;
     transform-style: preserve-3d;
     transition: transform 0.6s;
-    overflow: hidden;
+
+    video {
+        ${props => videosRadios(props.size)}
+    }
+   
 `;
