@@ -10,7 +10,7 @@ const VideoCallManager = () => {
   const [videoRotate, setVideoRotate] = useState(180);
   const [videoSize, setVideoSize] =
     useState<keyof { sm: "sm"; md: "md"; lg: "lg" }>("sm");
-  const [isMuted, setIsMuted] = useState(false);
+  // const [isMuted, setIsMuted] = useState(false);
   const muveIsStarted = useRef<boolean>(false);
   const timeOut = useRef<any>(null);
   const toch = useRef<number>(0);
@@ -64,12 +64,12 @@ const VideoCallManager = () => {
     // }
   }, [micIsOn]);
   console.log(localStream, remoteStream);
-  const toggleMute = () => {
-    localStream?.getAudioTracks().forEach((track) => {
-      track.enabled = !isMuted;
-    });
-    setIsMuted(!isMuted);
-  };
+  // const toggleMute = () => {
+  //   localStream?.getAudioTracks().forEach((track) => {
+  //     track.enabled = !isMuted;
+  //   });
+  //   setIsMuted(!isMuted);
+  // };
 
   return (
     <Styles.VideoCallcontainer

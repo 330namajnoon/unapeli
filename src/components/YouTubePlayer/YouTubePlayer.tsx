@@ -44,7 +44,7 @@ const YouTubePlayer = () => {
       console.log(`Tiempo actual: ${currentTime} segundos`);
     }
   };
-  const onPlayerReady = (event: any) => {
+  const onPlayerReady = () => {
     console.log("El video está listo!");
   };
 
@@ -64,13 +64,13 @@ const YouTubePlayer = () => {
     w.player.stopVideo();
   };
 
-  const handleChangeTime = () => {
-    const w = window as any;
-    const seconds = parseFloat("10"); // Convertir el tiempo a número
-    if (!isNaN(seconds)) {
-      w.player.seekTo(seconds, true); // Cambiar el tiempo del video
-    }
-  };
+  // const handleChangeTime = () => {
+  //   const w = window as any;
+  //   const seconds = parseFloat("10"); // Convertir el tiempo a número
+  //   if (!isNaN(seconds)) {
+  //     w.player.seekTo(seconds, true); // Cambiar el tiempo del video
+  //   }
+  // };
 
   return (
     <div>

@@ -9,7 +9,7 @@ export interface StartStepProps {
 }
 
 const StartStep = ({ action }: StartStepProps) => {
-  const { localStream, remoteStream } = useContext(AppContext);
+  const { localStream } = useContext(AppContext);
   const users = useSelector(
     (state: RootState) => state.app.peerConnectionUsers
   );

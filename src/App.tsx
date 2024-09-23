@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import StartStep from "./components/StartStep";
 import Video from "./components/Video";
 import Menu from "./components/Menu";
@@ -21,8 +21,8 @@ function App() {
   );
   const id = useSelector((state: RootState) => state.app.id);
   const roomId = useSelector((state: RootState) => state.app.roomId);
-  const [step, setStep] =
-    useState<keyof { start: "start"; call: "call" }>("start");
+  // const [step, setStep] =
+  //   useState<keyof { start: "start"; call: "call" }>("start");
 
   const userExists = (userId: string) => {
     return users.includes(userId);

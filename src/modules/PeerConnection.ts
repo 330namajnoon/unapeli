@@ -16,8 +16,8 @@ class PeerConnection {
 
   createConnection(
     id: string,
-    onicecandidate = (event: RTCPeerConnectionIceEvent) => {},
-    ontrack = (event: RTCTrackEvent) => {}
+    onicecandidate: (event: RTCPeerConnectionIceEvent) => void,
+    ontrack: (event: RTCTrackEvent) => void
   ) {
     const connection = new RTCPeerConnection({
       iceServers: [{ urls: this.iseServer }],

@@ -1,24 +1,23 @@
 import * as Styles from "./styles";
-import { useContext, useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useRef } from "react";
+import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import YouTubePlayer from "../YouTubePlayer/YouTubePlayer";
-import appContext from "../../contexts/appContext";
 import socketManager from "../../socket";
 
 
 
 const Video = () => {
   const video = useRef<HTMLVideoElement>(null);
-  const dispatch = useDispatch();
-  const [socketCalled, setSocketCalled] = useState(false);
+  // const dispatch = useDispatch();
+  // const [socketCalled, setSocketCalled] = useState(false);
   const id = useSelector((state: RootState) => state.app.id);
   const path = useSelector((state: RootState) => state.app.path);
   const youtubeId = useSelector((state: RootState) => state.app.youtubeId);
 
-  const handleVideoOnChange = (data: string) => {
-    eval(data);
-  };
+  // const handleVideoOnChange = (data: string) => {
+  //   eval(data);
+  // };
 
   return (
     <>
