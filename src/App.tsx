@@ -1,203 +1,193 @@
-import React, { useEffect, useRef, useState } from "react";
-import VideoCall from "./components/VideoCall";
+import { useCallback, useContext, useEffect, useState } from "react";
 import StartStep from "./components/StartStep";
 import Video from "./components/Video";
-import * as Styles from "./styles";
 import Menu from "./components/Menu";
 import MessageModal from "./components/MessageModal";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "./store";
-import socket from "./socket";
+import VideoCallManager from "./components/VideoCallManager";
+import socketManager from "./socket";
+import peerConnectionContext from "./contexts/peerConnectionContext";
+import { addUser } from "./slices/appSile";
+import AppContext from "./contexts/appContext";
 
 function App() {
-  const micIsOn = useSelector((state: RootState) => state.app.micIsOn);
-  const localVideo = useRef<HTMLVideoElement>(null);
-  const remoteVideo = useRef<HTMLVideoElement>(null);
-  const localStream = useRef<MediaStream>(new MediaStream());
-  const cameraStream = useRef<MediaStream | null>(null);
-  const audioStream = useRef<MediaStream | null>(null);
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const [videoSize, setVideoSize] =
-    useState<keyof { sm: "sm"; md: "md"; lg: "lg" }>("sm");
-  const toch = useRef<number>(0);
-  const timeOut = useRef<any>(null);
-  const videoSizeTimeout = useRef<any>(null);
-  const muveIsStarted = useRef<boolean>(false);
-  const [videoRotate, setVideoRotate] = useState(180);
-
-  const handleToch = () => {
-    muveIsStarted.current = true;
-    clearTimeout(timeOut.current);
-    clearTimeout(videoSizeTimeout.current);
-    timeOut.current = setTimeout(() => {
-      toch.current = 0;
-    }, 300);
-    toch.current++;
-    if (toch.current === 2) {
-      videoSizeTimeout.current = setTimeout(() => {
-        if (videoSize === "sm") {
-          setVideoSize("md");
-        } else if (videoSize === "md") {
-          setVideoSize("lg");
-        } else if (videoSize === "lg") {
-          setVideoSize("sm");
-        }
-      }, 300);
-    }
-    if (toch.current === 3) {
-      setVideoRotate((prev) => prev + 180);
-    }
-  };
-
-  const handleMove = (e: React.MouseEvent<HTMLDivElement> | any) => {
-    const video: HTMLDivElement = e.currentTarget;
-    if (muveIsStarted.current) {
-      video.style.top = `${e.clientY - video.offsetHeight / 2}px`;
-      video.style.left = `${e.clientX - video.offsetWidth / 2}px`;
-    }
-  };
-
-  const handleEndMove = () => {
-    muveIsStarted.current = false;
-  };
-
+  const dispatch = useDispatch();
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const peerConnection = useContext(peerConnectionContext);
+  const users = useSelector(
+    (state: RootState) => state.app.peerConnectionUsers
+  );
   const id = useSelector((state: RootState) => state.app.id);
+  const roomId = useSelector((state: RootState) => state.app.roomId);
   const [step, setStep] =
     useState<keyof { start: "start"; call: "call" }>("start");
 
-  const getUserMedia: (
-    constraints?: MediaStreamConstraints
-  ) => Promise<MediaStream> = (constraints?: MediaStreamConstraints) => {
-    return new Promise((resolve, reject) => {
-      navigator.mediaDevices
-        .getUserMedia(constraints)
-        .then((stream) => {
-          resolve(stream);
-        })
-        .catch((err) => {
-          reject(err);
-        });
+  const userExists = (userId: string) => {
+    return users.includes(userId);
+  };
+
+  const createOffer = (userId: string) => {
+    peerConnection.createOffer(userId).then((offer) => {
+      socketManager.emit(
+        "signal",
+        { userId: id, type: "offer", offer },
+        roomId
+      );
     });
   };
 
-  const createPeerConnection = () => {
-    peerConnection.current = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:bellachao.zapto.org:3478" }],
-    });
-    peerConnection.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("signal", { candidate: event.candidate }, id);
-      }
-    };
-    peerConnection.current.ontrack = (event) => {
-      setVideoRotate(0);
-      remoteVideo.current!.srcObject = event.streams[0];
-    };
-    localStream.current!.getTracks().forEach((track) => {
-      peerConnection.current!.addTrack(track, localStream.current!);
+  const createAnswer = (userId: string, offer: RTCSessionDescriptionInit) => {
+    peerConnection.createAnswer(userId, offer).then((answer) => {
+      socketManager.emit(
+        "signal",
+        { userId: id, type: "answer", answer },
+        roomId
+      );
     });
   };
 
-  const startCall = () => {
-    createPeerConnection();
-    peerConnection.current!.createOffer().then((offer) => {
-      peerConnection.current!.setLocalDescription(offer);
-      socket.emit("signal", { offer: offer }, id);
-    });
-  };
+  const login = (data: { userId: string; type: string }) => {
+    if (userExists(data.userId)) {
+      console.log("User already exists");
+      // const connection = peerConnection.getConnection(data.userId)?.connection;
+      // if (connection && connection?.connectionState === "new") {
 
-  const start = () => {
-    if (cameraStream.current) {
-      cameraStream.current.getVideoTracks().forEach((track) => {
-        localStream.current!.addTrack(track);
-      });
-      localVideo.current!.srcObject = localStream.current;
-    }
-    if (audioStream.current) {
-      audioStream.current.getAudioTracks().forEach((track) => {
-        localStream.current!.addTrack(track);
-      });
-      localVideo.current!.srcObject = localStream.current;
-    }
-    setTimeout(() => {
-      startCall();
-    }, 1000);
-  };
-
-  useEffect(() => {
-    setInterval(() => {
-      socket.connect();
-    }, 1000);
-    getUserMedia({ audio: true }).then((stream: any) => {
-      audioStream.current = stream;
-    });
-    getUserMedia({ video: true }).then((stream: any) => {
-      cameraStream.current = stream;
-    });
-    socket.on(`signal_${id}`, (data: any) => {
-      if (data.offer) {
-        createPeerConnection();
-        peerConnection.current!.setRemoteDescription(data.offer);
-        peerConnection.current!.createAnswer().then((answer) => {
-          peerConnection.current!.setLocalDescription(answer);
-          socket.emit("signal", { answer: answer }, id);
-        });
-      } else if (data.answer) {
-        peerConnection.current!.setRemoteDescription(
-          new RTCSessionDescription(data.answer)
-        );
-      } else if (data.candidate) {
-        peerConnection.current!.addIceCandidate(
-          new RTCIceCandidate(data.candidate)
-        );
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (micIsOn) {
-      localStream.current.getAudioTracks().forEach((track) => {
-        track.enabled = true;
-      });
+      //   console.log(connection?.connectionState);
+      //   connection.createOffer().then((offer) => {
+      //     connection.setLocalDescription(new RTCSessionDescription(offer));
+      //     socketManager.emit(
+      //       "signal",
+      //       { userId: id, type: "offer", offer },
+      //       roomId
+      //     );
+      //   });
+      // }
     } else {
-      localStream.current.getAudioTracks().forEach((track) => {
-        track.enabled = false;
+      dispatch(addUser(data.userId));
+      peerConnection.createConnection(
+        data.userId,
+        (event) => {
+          socketManager.emit(
+            "signal",
+            { userId: id, type: "candidate", candidate: event.candidate },
+            roomId
+          );
+        },
+        (event) => {
+          setRemoteStream(event.streams[0]);
+          console.log(event.streams);
+        }
+      );
+      socketManager.emit("signal", { userId: id, type: "login" }, roomId);
+    }
+  };
+
+  const offerManager = (data: {
+    userId: string;
+    offer: RTCSessionDescriptionInit;
+  }) => {
+    if (data.offer && userExists(data.userId)) {
+      createAnswer(data.userId, data.offer);
+    }
+  };
+
+  const answerManager = (data: {
+    userId: string;
+    answer: RTCSessionDescriptionInit;
+  }) => {
+    if (data.answer && userExists(data.userId)) {
+      peerConnection.setRemoteDescription(data.userId, data.answer);
+    }
+  };
+
+  const candidateManager = (data: {
+    userId: string;
+    candidate: RTCIceCandidateInit;
+  }) => {
+    if (data.candidate && userExists(data.userId)) {
+      peerConnection.addIceCandidate(data.userId, data.candidate);
+    }
+  };
+
+  const trackManager = (data: { userId: string; type: string }) => {
+    if (data.type === "addTracks" && localStream) {
+      users.forEach((userId) => {
+        peerConnection.addStream(userId, localStream);
+        createOffer(userId);
       });
     }
-  }, [micIsOn]);
+  };
+
+  useEffect(() => {
+    window.navigator.mediaDevices
+      .getUserMedia({ video: { height: 300 } })
+      .then((stream) => {
+        setLocalStream(stream);
+      });
+    socketManager.emit("signal", { userId: id, type: "login" }, roomId);
+    socketManager.on(`signal_${roomId}`, (data) => {
+      switch (data.type) {
+        case "login":
+          login(data);
+          break;
+        case "offer":
+          offerManager(data);
+          break;
+        case "answer":
+          answerManager(data);
+          break;
+        case "candidate":
+          candidateManager(data);
+          break;
+        case "addTracks":
+          trackManager(data);
+          break;
+        default:
+          break;
+      }
+    });
+    return () => {
+      socketManager.getSocket().off(`signal_${roomId}`);
+    };
+  }, [users]);
 
   return (
-    <div style={{ position: "relative" }}>
-      <Menu />
-      <MessageModal />
-      {step === "start" && (
-        <StartStep
-          action={() => {
-            start();
-            setStep("call");
-          }}
-        />
-      )}
-      <Styles.VideoCallcontainer
-        rotate={videoRotate}
-        size={videoSize}
-        onMouseMove={handleMove}
-        onTouchMove={handleMove}
-        onMouseDown={handleToch}
-        onMouseUp={handleEndMove}
-        onMouseOut={handleEndMove}
-      >
-        <VideoCall ref={remoteVideo} autoPlay playsInline></VideoCall>
-        <VideoCall
-          style={{ transform: "rotateY(180deg)", borderRadius: "10px" }}
-          ref={localVideo}
-          autoPlay
-          playsInline
-          muted
-        ></VideoCall>
-      </Styles.VideoCallcontainer>
-      <Video socket={socket} />
-    </div>
+    <AppContext.Provider value={{ localStream, remoteStream }}>
+      <div style={{ position: "relative" }}>
+        <Menu />
+        <MessageModal />
+        {!remoteStream && (
+          <StartStep
+            action={() => {
+              users.forEach((userId) => {
+                createOffer(userId);
+                const connection =
+                  peerConnection.getConnection(userId)?.connection;
+                if (connection) {
+                  connection.oniceconnectionstatechange = () => {
+                    if (
+                      connection?.iceConnectionState === "connected" &&
+                      localStream
+                    ) {
+                      peerConnection.addStream(userId, localStream);
+                      socketManager.emit(
+                        "signal",
+                        { userId: id, type: "addTracks" },
+                        roomId
+                      );
+                    }
+                  };
+                }
+              });
+            }}
+          />
+        )}
+        <VideoCallManager />
+        <Video />
+      </div>
+    </AppContext.Provider>
   );
 }
 

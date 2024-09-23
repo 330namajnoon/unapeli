@@ -1,13 +1,26 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export type AppSliceState = {
+  micIsOn: boolean;
+  id: string | null;
+  roomId: string | null;
+  path: string | null;
+  youtubeId: string | null;
+  peerConnectionUsers: string[];
+};
+
+const initialState: AppSliceState = {
+  micIsOn: true,
+  id: new URLSearchParams(window.location.search).get("id"),
+  roomId: new URLSearchParams(window.location.search).get("roomId"),
+  path: new URLSearchParams(window.location.search).get("path"),
+  youtubeId: new URLSearchParams(window.location.search).get("youtubeId"),
+  peerConnectionUsers: [],
+};
+
 const appSlice = createSlice({
   name: "app",
-  initialState: {
-    micIsOn: true,
-    id: new URLSearchParams(window.location.search).get("id"),
-    path: new URLSearchParams(window.location.search).get("path"),
-    youtubeId: new URLSearchParams(window.location.search).get("youtubeId"),
-  },
+  initialState,
   reducers: {
     setMicIsOn: (state, action) => {
       state.micIsOn = action.payload;
@@ -15,8 +28,19 @@ const appSlice = createSlice({
     setPath: (state, action) => {
       state.path = action.payload;
     },
+    setPeerConnectionUsers: (state, action) => {
+      state.peerConnectionUsers = action.payload;
+    },
+    addUser: (state, action) => {
+      state.peerConnectionUsers.push(action.payload);
+    },
+    removeUser: (state, action) => {
+      state.peerConnectionUsers = state.peerConnectionUsers.filter(
+        (userId) => userId !== action.payload
+      );
+    },
   },
 });
 
 export default appSlice.reducer;
-export const { setMicIsOn, setPath } = appSlice.actions;
+export const { setMicIsOn, setPath, addUser, removeUser, setPeerConnectionUsers } = appSlice.actions;
