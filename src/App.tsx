@@ -125,6 +125,7 @@ function App() {
     try {
       const videoStream = await window.navigator.mediaDevices.getUserMedia({
         video: { height: 300 },
+        audio: true,
       });
       videoStream.getTracks().forEach((track) => newStream.addTrack(track));
       // const audioStream = await window.navigator.mediaDevices.getUserMedia({
