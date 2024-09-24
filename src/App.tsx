@@ -21,6 +21,7 @@ function App() {
   );
   const id = useSelector((state: RootState) => state.app.id);
   const roomId = useSelector((state: RootState) => state.app.roomId);
+  const shareScreen = useSelector((state: RootState) => state.app.shareScreen);
   // const [step, setStep] =
   //   useState<keyof { start: "start"; call: "call" }>("start");
 
@@ -48,8 +49,8 @@ function App() {
     });
   };
 
-  const login = (data: { userId: string; type: string }) => {
-    if (userExists(data.userId)) {
+  const login = (data: { userId: string; type: string; users: string[] }) => {
+    if (id && userExists(data.userId) && data.users.includes(id)) {
       console.log("User already exists");
       // const connection = peerConnection.getConnection(data.userId)?.connection;
       // if (connection && connection?.connectionState === "new") {
@@ -65,22 +66,37 @@ function App() {
       //   });
       // }
     } else {
-      dispatch(addUser(data.userId));
-      peerConnection.createConnection(
-        data.userId,
-        (event) => {
-          socketManager.emit(
-            "signal",
-            { userId: id, type: "candidate", candidate: event.candidate },
-            roomId
-          );
-        },
-        (event) => {
-          setRemoteStream(event.streams[0]);
-          console.log(event.streams);
-        }
+      socketManager.emit(
+        "signal",
+        { userId: id, users, type: "login" },
+        roomId
       );
-      socketManager.emit("signal", { userId: id, type: "login" }, roomId);
+      if (!userExists(data.userId)) {
+        console.log("User added");
+        dispatch(addUser(data.userId));
+        peerConnection.createConnection({
+          id: data.userId,
+          onicecandidate: (event) => {
+            socketManager.emit(
+              "signal",
+              { userId: id, type: "candidate", candidate: event.candidate },
+              roomId
+            );
+          },
+          ontrack: (event) => {
+            setRemoteStream(event.streams[0]);
+            console.log(event.streams[0].getTracks());
+          },
+          onconnectionstatechange: function () {
+            if (
+              this.connectionState === "disconnected" ||
+              this.connectionState === "failed"
+            ) {
+              createOffer(data.userId);
+            }
+          },
+        });
+      }
     }
   };
 
@@ -121,24 +137,85 @@ function App() {
   };
 
   useEffect(() => {
+    if (localStream) {
+      users.forEach((userId) => {
+        peerConnection.addStream(userId, localStream);
+      });
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (shareScreen) {
+      window.navigator.mediaDevices
+        .getDisplayMedia({ video: { height: 300 } })
+        .then((stream) => {
+          stream.getTracks()[0].onended = () => {
+            window.navigator.mediaDevices
+            .getUserMedia({ video: { height: 300 } })
+            .then((stream) => {
+              setLocalStream(stream);
+              users.forEach((userId) => {
+                peerConnection.addStream(userId, stream);
+                createOffer(userId);
+              });
+            });
+          };
+          let ls = new MediaStream();
+          localStream?.getTracks().forEach((track) => {
+            ls?.addTrack(track);
+          });
+          stream.getTracks().forEach((track) => {
+            ls?.addTrack(track);
+          });
+          setLocalStream(ls);
+          users.forEach((userId) => {
+            peerConnection.addStream(userId, ls);
+            createOffer(userId);
+          });
+        })
+    } else {
+      window.navigator.mediaDevices
+        .getUserMedia({ video: { height: 300 } })
+        .then((stream) => {
+          setLocalStream(stream);
+          users.forEach((userId) => {
+            peerConnection.addStream(userId, stream);
+            createOffer(userId);
+          });
+        });
+    }
+  }, [shareScreen]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", () => {
+      users.forEach((userId) => {
+        console.log(
+          peerConnection.getConnection(userId)?.connection?.connectionState
+        );
+        //createOffer(userId);
+      });
+    });
     window.navigator.mediaDevices
       .getUserMedia({ video: { height: 300 } })
       .then((stream) => {
         setLocalStream(stream);
       });
-    socketManager.emit("signal", { userId: id, type: "login" }, roomId);
+    socketManager.emit("signal", { userId: id, users, type: "login" }, roomId);
     socketManager.on(`signal_${roomId}`, (data) => {
       switch (data.type) {
         case "login":
           login(data);
           break;
         case "offer":
+          console.log("offer");
           offerManager(data);
           break;
         case "answer":
+          console.log("answer");
           answerManager(data);
           break;
         case "candidate":
+          console.log("candidate");
           candidateManager(data);
           break;
         case "addTracks":
@@ -150,6 +227,7 @@ function App() {
     });
     return () => {
       socketManager.getSocket().off(`signal_${roomId}`);
+      window.removeEventListener("keydown", () => {});
     };
   }, [users]);
 
@@ -163,23 +241,6 @@ function App() {
             action={() => {
               users.forEach((userId) => {
                 createOffer(userId);
-                const connection =
-                  peerConnection.getConnection(userId)?.connection;
-                if (connection) {
-                  connection.oniceconnectionstatechange = () => {
-                    if (
-                      connection?.iceConnectionState === "connected" &&
-                      localStream
-                    ) {
-                      peerConnection.addStream(userId, localStream);
-                      socketManager.emit(
-                        "signal",
-                        { userId: id, type: "addTracks" },
-                        roomId
-                      );
-                    }
-                  };
-                }
               });
             }}
           />

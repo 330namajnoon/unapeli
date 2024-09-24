@@ -3,11 +3,12 @@ import { setShowMessageSend } from "../../slices/messageSlice";
 import Option from "./Option";
 import * as Styles from "./styles";
 import { RootState } from "../../store";
-import { setMicIsOn } from "../../slices/appSile";
+import { setMicIsOn, setShareScreen } from "../../slices/appSile";
 
 const Menu = () => {
   const dispatch = useDispatch();
   const micIsOn = useSelector((state: RootState) => state.app.micIsOn);
+  const shareScreen = useSelector((state: RootState) => state.app.shareScreen);
   const options = [
     {
       label: "chat",
@@ -23,11 +24,19 @@ const Menu = () => {
         dispatch(setMicIsOn(!micIsOn));
       },
     },
+    {
+      label: "screen",
+      value: "present_to_all",
+      styles: shareScreen ? { color: "green" } : {},
+      onClick: () => {
+        dispatch(setShareScreen(!shareScreen));
+      },
+    },
   ];
   return (
     <Styles.Container>
       {options.map((option) => (
-        <Option key={option.value} onClick={option.onClick}>
+        <Option key={option.value} onClick={option.onClick} styles={option.styles}>
           {option.value}
         </Option>
       ))}

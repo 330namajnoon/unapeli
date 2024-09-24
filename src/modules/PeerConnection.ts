@@ -4,6 +4,7 @@ export interface Connection {
   id: string;
   connection: RTCPeerConnection;
   dataChannel?: RTCDataChannel;
+  senders: RTCRtpSender[];
 }
 
 class PeerConnection {
@@ -14,11 +15,17 @@ class PeerConnection {
     this.iseServer = STUN_SERVER;
   }
 
-  createConnection(
-    id: string,
-    onicecandidate: (event: RTCPeerConnectionIceEvent) => void,
-    ontrack: (event: RTCTrackEvent) => void
-  ) {
+  createConnection({
+    id,
+    onicecandidate,
+    ontrack,
+    onconnectionstatechange,
+  }: {
+    id: string;
+    onicecandidate: (event: RTCPeerConnectionIceEvent) => void;
+    ontrack: (event: RTCTrackEvent) => void;
+    onconnectionstatechange: (this: RTCPeerConnection, ev: Event) => void;
+  }) {
     const connection = new RTCPeerConnection({
       iceServers: [{ urls: this.iseServer }],
     });
@@ -27,6 +34,7 @@ class PeerConnection {
         onicecandidate(event);
       }
     };
+    connection.onconnectionstatechange = onconnectionstatechange;
     let dataChannel = connection.createDataChannel("dataChannel");
     connection.ondatachannel = (event) => {
       dataChannel = event.channel;
@@ -35,7 +43,7 @@ class PeerConnection {
       };
     };
     connection.ontrack = ontrack;
-    this.connections.push({ id, connection, dataChannel });
+    this.connections.push({ id, connection, dataChannel, senders: [] });
     return connection;
   }
 
@@ -46,8 +54,11 @@ class PeerConnection {
   addStream(id: string, stream: MediaStream) {
     const connection = this.getConnection(id);
     if (!connection) return;
+    connection.senders?.forEach((sender) => {
+      connection.connection.removeTrack(sender);
+    });
     stream.getTracks().forEach((track) => {
-      connection.connection.addTrack(track, stream);
+      connection.senders.push(connection.connection.addTrack(track, stream));
     });
   }
 

@@ -63,13 +63,30 @@ const VideoCallManager = () => {
     //   });
     // }
   }, [micIsOn]);
-  console.log(localStream, remoteStream);
   // const toggleMute = () => {
   //   localStream?.getAudioTracks().forEach((track) => {
   //     track.enabled = !isMuted;
   //   });
   //   setIsMuted(!isMuted);
   // };
+
+  const tracksManager: (stream?: MediaStream) => MediaStream = (stream?: MediaStream) => {
+    const newStream = new MediaStream();
+    if (!stream) return newStream;
+    const videoTrack = stream.getVideoTracks()[0];
+    const audioTrack = stream.getAudioTracks()[0];
+    if (videoTrack)
+      newStream.addTrack(videoTrack);
+    if (audioTrack)
+      newStream.addTrack(audioTrack);
+    return newStream;
+  };
+
+  useEffect(() => {
+    if (localStream) {
+      tracksManager(localStream);
+    }
+  }, [remoteStream]);
 
   return (
     <Styles.VideoCallcontainer
@@ -84,7 +101,7 @@ const VideoCallManager = () => {
       <Styles.Video
         ref={(video) => {
           if (video && localStream) {
-            video.srcObject = localStream;
+            video.srcObject = tracksManager(localStream);
           }
         }}
         autoPlay
@@ -94,7 +111,7 @@ const VideoCallManager = () => {
         style={{transform: "rotateY(180deg)"}}
         ref={(video) => {
           if (video && remoteStream) {
-            video.srcObject = remoteStream;
+            video.srcObject = tracksManager(remoteStream);
           }
         }}
         autoPlay
