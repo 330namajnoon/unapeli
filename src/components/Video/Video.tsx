@@ -33,9 +33,7 @@ const Video = () => {
     return newStream;
   };
 
-  const remoteTracksQuantity = remoteStream?.getTracks().length || 0;
-
-  console.log(localStream?.getTracks());
+  const remoteTracksQuantity = remoteStream?.getVideoTracks().length || 0;
 
   return (
     <>
@@ -48,7 +46,7 @@ const Video = () => {
               video.srcObject = tracksManager((remoteTracksQuantity > 1) && remoteStream ? remoteStream : localStream ? localStream : undefined);
             }
           }}
-          autoPlay={!!tracksManager(remoteStream ? remoteStream : localStream ? localStream : undefined)}
+          autoPlay
           onPlay={(e: any) =>
             socketManager.emit(
               `video.current.currentTime = ${e.target.currentTime};video.current.play();socket.emit("data", { path }, id.current);`

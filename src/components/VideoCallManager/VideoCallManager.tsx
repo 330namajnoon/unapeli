@@ -51,18 +51,6 @@ const VideoCallManager = () => {
   const handleEndMove = () => {
     muveIsStarted.current = false;
   };
-
-  useEffect(() => {
-    // if (micIsOn) {
-    //   localStream!.getAudioTracks().forEach((track) => {
-    //     track.enabled = true;
-    //   });
-    // } else {
-    //   localStream!.getAudioTracks().forEach((track) => {
-    //     track.enabled = false;
-    //   });
-    // }
-  }, [micIsOn]);
   // const toggleMute = () => {
   //   localStream?.getAudioTracks().forEach((track) => {
   //     track.enabled = !isMuted;
@@ -70,17 +58,26 @@ const VideoCallManager = () => {
   //   setIsMuted(!isMuted);
   // };
 
-  const tracksManager: (stream?: MediaStream) => MediaStream = (stream?: MediaStream) => {
+  const tracksManager: (stream?: MediaStream) => MediaStream = (
+    stream?: MediaStream
+  ) => {
     const newStream = new MediaStream();
     if (!stream) return newStream;
     const videoTrack = stream.getVideoTracks()[0];
     const audioTrack = stream.getAudioTracks()[0];
-    if (videoTrack)
-      newStream.addTrack(videoTrack);
-    if (audioTrack)
-      newStream.addTrack(audioTrack);
+    if (videoTrack) newStream.addTrack(videoTrack);
+    if (audioTrack) newStream.addTrack(audioTrack);
     return newStream;
   };
+
+  useEffect(() => {
+    if (localStream)
+      if (micIsOn) {
+        localStream.getAudioTracks()[0].enabled = true;
+      } else {
+        localStream.getAudioTracks()[0].enabled = false;
+      }
+  }, [micIsOn]);
 
   useEffect(() => {
     if (localStream) {
@@ -108,7 +105,7 @@ const VideoCallManager = () => {
         muted
       />
       <Styles.Video
-        style={{transform: "rotateY(180deg)"}}
+        style={{ transform: "rotateY(180deg)" }}
         ref={(video) => {
           if (video && remoteStream) {
             video.srcObject = tracksManager(remoteStream);

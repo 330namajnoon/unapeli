@@ -22,8 +22,6 @@ function App() {
   const id = useSelector((state: RootState) => state.app.id);
   const roomId = useSelector((state: RootState) => state.app.roomId);
   const shareScreen = useSelector((state: RootState) => state.app.shareScreen);
-  // const [step, setStep] =
-  //   useState<keyof { start: "start"; call: "call" }>("start");
 
   const userExists = (userId: string) => {
     return users.includes(userId);
@@ -52,19 +50,6 @@ function App() {
   const login = (data: { userId: string; type: string; users: string[] }) => {
     if (id && userExists(data.userId) && data.users.includes(id)) {
       console.log("User already exists");
-      // const connection = peerConnection.getConnection(data.userId)?.connection;
-      // if (connection && connection?.connectionState === "new") {
-
-      //   console.log(connection?.connectionState);
-      //   connection.createOffer().then((offer) => {
-      //     connection.setLocalDescription(new RTCSessionDescription(offer));
-      //     socketManager.emit(
-      //       "signal",
-      //       { userId: id, type: "offer", offer },
-      //       roomId
-      //     );
-      //   });
-      // }
     } else {
       socketManager.emit(
         "signal",
@@ -85,7 +70,6 @@ function App() {
           },
           ontrack: (event) => {
             setRemoteStream(event.streams[0]);
-            console.log(event.streams[0].getTracks());
           },
           onconnectionstatechange: function () {
             if (
@@ -136,6 +120,49 @@ function App() {
     }
   };
 
+  const getUserMedia = async () => {
+    const newStream = new MediaStream();
+    try {
+      const videoStream = await window.navigator.mediaDevices.getUserMedia({
+        video: { height: 300 },
+      });
+      videoStream.getTracks().forEach((track) => newStream.addTrack(track));
+      const audioStream = await window.navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      audioStream.getTracks().forEach((track) => newStream.addTrack(track));
+    } catch {}
+    setLocalStream(newStream);
+    users.forEach((userId) => {
+      peerConnection.addStream(userId, newStream);
+      createOffer(userId);
+    });
+  };
+
+  const getDisplayMedia = async (localStream: MediaStream) => {
+    const newStream = new MediaStream();
+    try {
+      const stream = await window.navigator.mediaDevices.getDisplayMedia({
+        video: { height: 720 },
+        audio: true,
+      });
+      stream.getTracks()[0].onended = () => {
+        getUserMedia();
+      };
+      localStream?.getTracks().forEach((track) => {
+        newStream?.addTrack(track);
+      });
+      stream.getTracks().forEach((track) => {
+        newStream?.addTrack(track);
+      });
+      setLocalStream(newStream);
+      users.forEach((userId) => {
+        peerConnection.addStream(userId, newStream);
+        createOffer(userId);
+      });
+    } catch {}
+  };
+
   useEffect(() => {
     if (localStream) {
       users.forEach((userId) => {
@@ -145,44 +172,10 @@ function App() {
   }, [localStream]);
 
   useEffect(() => {
-    if (shareScreen) {
-      window.navigator.mediaDevices
-        .getDisplayMedia({ video: { height: 300 } })
-        .then((stream) => {
-          stream.getTracks()[0].onended = () => {
-            window.navigator.mediaDevices
-            .getUserMedia({ video: { height: 300 } })
-            .then((stream) => {
-              setLocalStream(stream);
-              users.forEach((userId) => {
-                peerConnection.addStream(userId, stream);
-                createOffer(userId);
-              });
-            });
-          };
-          let ls = new MediaStream();
-          localStream?.getTracks().forEach((track) => {
-            ls?.addTrack(track);
-          });
-          stream.getTracks().forEach((track) => {
-            ls?.addTrack(track);
-          });
-          setLocalStream(ls);
-          users.forEach((userId) => {
-            peerConnection.addStream(userId, ls);
-            createOffer(userId);
-          });
-        })
+    if (shareScreen && localStream) {
+      getDisplayMedia(localStream);
     } else {
-      window.navigator.mediaDevices
-        .getUserMedia({ video: { height: 300 } })
-        .then((stream) => {
-          setLocalStream(stream);
-          users.forEach((userId) => {
-            peerConnection.addStream(userId, stream);
-            createOffer(userId);
-          });
-        });
+      getUserMedia();
     }
   }, [shareScreen]);
 
@@ -192,7 +185,6 @@ function App() {
         console.log(
           peerConnection.getConnection(userId)?.connection?.connectionState
         );
-        //createOffer(userId);
       });
     });
     window.navigator.mediaDevices
