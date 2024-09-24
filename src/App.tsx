@@ -127,10 +127,10 @@ function App() {
         video: { height: 300 },
       });
       videoStream.getTracks().forEach((track) => newStream.addTrack(track));
-      const audioStream = await window.navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-      audioStream.getTracks().forEach((track) => newStream.addTrack(track));
+      // const audioStream = await window.navigator.mediaDevices.getUserMedia({
+      //   audio: true,
+      // });
+      // audioStream.getTracks().forEach((track) => newStream.addTrack(track));
     } catch {}
     setLocalStream(newStream);
     users.forEach((userId) => {
@@ -144,7 +144,7 @@ function App() {
     try {
       const stream = await window.navigator.mediaDevices.getDisplayMedia({
         video: { height: 720 },
-        audio: true,
+        // audio: true,
       });
       stream.getTracks()[0].onended = () => {
         getUserMedia();
