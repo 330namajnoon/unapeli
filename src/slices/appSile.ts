@@ -7,6 +7,7 @@ export type AppSliceState = {
   path: string | null;
   youtubeId: string | null;
   peerConnectionUsers: string[];
+  users: string[];
   shareScreen: boolean;
   isLoading: boolean;
 };
@@ -17,6 +18,7 @@ const initialState: AppSliceState = {
   roomId: new URLSearchParams(window.location.search).get("roomId"),
   path: new URLSearchParams(window.location.search).get("path"),
   youtubeId: new URLSearchParams(window.location.search).get("youtubeId"),
+  users: [],
   shareScreen: false,
   isLoading: false,
   peerConnectionUsers: [],
@@ -36,7 +38,7 @@ const appSlice = createSlice({
       state.peerConnectionUsers = action.payload;
     },
     addUser: (state, action) => {
-      state.peerConnectionUsers.push(action.payload);
+      state.users.push(action.payload);
     },
     removeUser: (state, action) => {
       state.peerConnectionUsers = state.peerConnectionUsers.filter(

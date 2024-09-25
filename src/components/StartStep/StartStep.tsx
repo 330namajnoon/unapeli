@@ -6,13 +6,12 @@ import { useContext } from "react";
 
 export interface StartStepProps {
   action: () => void;
+  myUsers: string[];
 }
 
-const StartStep = ({ action }: StartStepProps) => {
+const StartStep = ({ action, myUsers }: StartStepProps) => {
   const { localStream } = useContext(AppContext);
-  const users = useSelector(
-    (state: RootState) => state.app.peerConnectionUsers
-  );
+  
   return (
     <Styles.Container>
       <Styles.Content>
@@ -25,12 +24,12 @@ const StartStep = ({ action }: StartStepProps) => {
           autoPlay
           muted
         />
-        {users.map((user: string) => (
+        {myUsers.map((user: string) => (
           <Styles.UserView key={user}>
             <Styles.Name>{user}</Styles.Name>
           </Styles.UserView>
         ))}
-        { localStream && !!users.length && (
+        { !localStream && !!myUsers.length && (
           <Styles.Button onClick={action}>Start</Styles.Button>
         )}
       </Styles.Content>
