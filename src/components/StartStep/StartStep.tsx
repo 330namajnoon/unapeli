@@ -1,8 +1,6 @@
-import { useSelector } from "react-redux";
 import * as Styles from "./styles";
-import { RootState } from "../../store";
-import AppContext from "../../contexts/appContext";
-import { useContext } from "react";
+import { useStreams } from "../../hooks/useStreams";
+import Loading from "../Loading";
 
 export interface StartStepProps {
   action: () => void;
@@ -10,7 +8,7 @@ export interface StartStepProps {
 }
 
 const StartStep = ({ action, myUsers }: StartStepProps) => {
-  const { localStream } = useContext(AppContext);
+  const [{ localStream }] = useStreams();
   
   return (
     <Styles.Container>
@@ -29,10 +27,11 @@ const StartStep = ({ action, myUsers }: StartStepProps) => {
             <Styles.Name>{user}</Styles.Name>
           </Styles.UserView>
         ))}
-        { !localStream && !!myUsers.length && (
+        { localStream && !!myUsers.length && (
           <Styles.Button onClick={action}>Start</Styles.Button>
         )}
       </Styles.Content>
+      <Loading isLoading={!!!localStream.getTracks().length}/>
     </Styles.Container>
   );
 };

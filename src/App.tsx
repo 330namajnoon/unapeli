@@ -4,10 +4,11 @@ import { useSelector } from "react-redux";
 import { RootState } from "./store";
 import StartStep from "./components/StartStep";
 import { useStreams } from "./hooks/useStreams";
+import VideoCallManager from "./components/VideoCallManager";
 
 const App = () => {
 	const id: string = useSelector((state: RootState) => state.app.roomId || "my_room");
-	const [addTracks, { localStream, remoteStream }] = useStreams();
+	const [{ localStream, remoteStream }] = useStreams();
 	const [socketSignal, emit] = useSocket({ id });
 	const [myUsers, setMyUsers] = useState<string[]>([]);
 	const myId = useSelector((state: RootState) => state.app.id || "NULL");
@@ -36,12 +37,15 @@ const App = () => {
 	}, []);
 
 	return (
-		<StartStep
-			myUsers={myUsers}
-			action={() => {
-				console.log(myUsers);
-			}}
-		/>
+		<>
+			<VideoCallManager />
+			<StartStep
+				myUsers={myUsers}
+				action={() => {
+					console.log(myUsers);
+				}}
+			/>
+		</>
 	);
 };
 
