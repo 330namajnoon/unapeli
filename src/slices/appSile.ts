@@ -8,6 +8,7 @@ export type AppSliceState = {
   youtubeId: string | null;
   peerConnectionUsers: string[];
   shareScreen: boolean;
+  isLoading: boolean;
 };
 
 const initialState: AppSliceState = {
@@ -17,6 +18,7 @@ const initialState: AppSliceState = {
   path: new URLSearchParams(window.location.search).get("path"),
   youtubeId: new URLSearchParams(window.location.search).get("youtubeId"),
   shareScreen: false,
+  isLoading: false,
   peerConnectionUsers: [],
 };
 
@@ -43,9 +45,12 @@ const appSlice = createSlice({
     },
     setShareScreen: (state, action) => {
       state.shareScreen = action.payload;
+    },
+    setIsLoading: (state, action) => {
+      state.isLoading = action.payload;
     }
   },
 });
 
 export default appSlice.reducer;
-export const { setMicIsOn, setPath, addUser, removeUser, setPeerConnectionUsers, setShareScreen } = appSlice.actions;
+export const { setMicIsOn, setPath, addUser, removeUser, setPeerConnectionUsers, setShareScreen, setIsLoading } = appSlice.actions;

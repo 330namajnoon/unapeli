@@ -21,9 +21,9 @@ const Video = () => {
   //   eval(data);
   // };
 
-  const tracksManager: (stream?: MediaStream) => MediaStream = (stream?: MediaStream) => {
+  const tracksManager: (stream?: MediaStream) => MediaStream | null = (stream?: MediaStream) => {
     const newStream = new MediaStream();
-    if (!stream) return newStream;
+    if (!stream) return null;
     const videoTrack = stream.getVideoTracks()[1];
     const audioTrack = stream.getAudioTracks()[1];
     if (videoTrack)

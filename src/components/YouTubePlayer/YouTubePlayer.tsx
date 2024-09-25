@@ -40,8 +40,7 @@ const YouTubePlayer = () => {
     const w = window as any;
     if (event.data === w.YT.PlayerState.PLAYING) {
       // Comienza a monitorear el tiempo de reproducción cuando el video está reproduciéndose
-      const currentTime = w.player.getCurrentTime();
-      console.log(`Tiempo actual: ${currentTime} segundos`);
+      //const currentTime = w.player.getCurrentTime();
     }
   };
   const onPlayerReady = () => {

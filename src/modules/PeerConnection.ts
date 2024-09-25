@@ -60,6 +60,25 @@ class PeerConnection {
     stream.getTracks().forEach((track) => {
       connection.senders.push(connection.connection.addTrack(track, stream));
     });
+    connection.connection.getSenders().forEach(sender => {
+      if (sender?.track?.kind === 'video') {
+        const parameters = sender.getParameters();
+        if (!parameters.encodings) {
+          parameters.encodings = [{}];
+        }
+        parameters.encodings[0].maxBitrate = 2500000;  // Bitrate máximo para video (2.5 Mbps)
+        sender.setParameters(parameters);
+      }
+    
+      if (sender?.track?.kind === 'audio') {
+        const parameters = sender.getParameters();
+        if (!parameters.encodings) {
+          parameters.encodings = [{}];
+        }
+        parameters.encodings[0].maxBitrate = 128000;  // Bitrate máximo para audio (128 kbps)
+        sender.setParameters(parameters);
+      }
+    });
   }
 
   deleteConnection(id: string) {
