@@ -5,6 +5,7 @@ const MEDIA_CONFIG = {
 		width: { ideal: 1280 },
 		height: { ideal: 720 },
 		frameRate: { ideal: 30, max: 60 },
+		facingMode: { ideal: "user" }  // Para la cámara frontal
 	},
 	AUDIO: {
 		echoCancellation: true, // Mejorar la calidad del audio
